@@ -17,6 +17,10 @@ Ikuti prompt untuk membuat nama, email, dan kata sandi admin. Kata sandi minimal
 
 Untuk menambah akun admin berikutnya, jalankan lagi `php artisan qc:create-admin` dengan email yang berbeda. Semua akun yang dibuat melalui perintah ini memiliki akses penuh ke data QC.
 
+## Contoh database
+
+`database/exports/Checksheet-SME-anonymized.sqlite` adalah salinan contoh dengan data yang telah dianonimkan untuk dibagikan di repositori. Kredensial, kontak, narasi, bukti gambar, dan data sesi asli tidak disertakan. Gunakan migration dan seeder untuk menyiapkan database aplikasi; file contoh ini bukan backup operasional.
+
 ## Fitur
 
 - Dashboard dengan ringkasan jumlah produk, inspeksi, hasil lulus/NG, grafik aktivitas 14 hari, dan inspeksi terbaru.
