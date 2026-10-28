@@ -19,7 +19,7 @@ Untuk menambah akun admin berikutnya, jalankan lagi `php artisan qc:create-admin
 
 ## Contoh database
 
-`database/exports/Checksheet-SME-anonymized.sqlite` adalah salinan contoh dengan data yang telah dianonimkan untuk dibagikan di repositori. Kredensial, kontak, narasi, bukti gambar, dan data sesi asli tidak disertakan. Gunakan migration dan seeder untuk menyiapkan database aplikasi; file contoh ini bukan backup operasional.
+`database/exports/Checksheet-SME-anonymized.mysql.sql` adalah dump MySQL berisi data contoh yang telah dianonimkan untuk dibagikan di repositori. Kredensial, kontak, narasi, bukti gambar, dan data sesi asli tidak disertakan. Impor file ini ke database MySQL baru yang kosong; file ini bukan backup operasional.
 
 ## Fitur
 
