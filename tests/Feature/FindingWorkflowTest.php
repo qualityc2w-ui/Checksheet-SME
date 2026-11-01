@@ -88,13 +88,13 @@ class FindingWorkflowTest extends TestCase
         $this->get(route('findings.respond.photo', [$token, 'problem']))->assertGone();
     }
 
-    public function test_pic_response_routes_are_limited_to_twenty_requests_per_minute(): void
+    public function test_pic_response_routes_are_limited_to_ten_requests_per_minute(): void
     {
         $reporter = User::factory()->create(['role' => 'inspector']);
         $finding = $this->createFinding($reporter);
         $url = route('findings.respond', $finding->response_token);
 
-        for ($request = 0; $request < 20; $request++) {
+        for ($request = 0; $request < 10; $request++) {
             $this->get($url)->assertOk();
         }
 

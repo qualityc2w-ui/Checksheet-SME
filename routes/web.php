@@ -15,7 +15,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [\App\Http\Controllers\AuthController::class, 'store'])->name('login.store');
 });
 
-Route::middleware('throttle:20,1')->group(function () {
+Route::middleware('throttle:10,1')->group(function () {
     Route::get('/findings/respond/{token}', [FindingController::class, 'respond'])->name('findings.respond');
     Route::post('/findings/respond/{token}/plan', [FindingController::class, 'submitPlan'])->name('findings.respond.plan');
     Route::post('/findings/respond/{token}/completion', [FindingController::class, 'submitCompletion'])->name('findings.respond.completion');
