@@ -61,9 +61,44 @@ class FindingWorkflowTest extends TestCase
         $this->get(route('findings.show', $finding))->assertOk()->assertSee($finding->code);
         Mail::assertSent(\App\Mail\FindingPicNotification::class, fn ($mail) => $mail->hasTo('pic@example.com'));
         $this->assertNotNull($finding->fresh()->email_sent_at);
+        $previousToken = $finding->response_token;
         $this->post(route('findings.email', $finding))->assertRedirect()->assertSessionHasNoErrors();
         Mail::assertSent(\App\Mail\FindingPicNotification::class, 2);
         $this->assertNotNull($finding->fresh()->email_sent_at);
+        $finding->refresh();
+        $this->assertNotSame($previousToken, $finding->response_token);
+        $this->assertTrue($finding->response_token_expires_at->isFuture());
+        $this->get(route('findings.respond', $previousToken))->assertNotFound();
+        $this->get(route('findings.respond', $finding->response_token))->assertOk();
+    }
+
+    public function test_pic_response_token_expires_after_seven_days(): void
+    {
+        $reporter = User::factory()->create(['role' => 'inspector']);
+        $finding = $this->createFinding($reporter);
+        $token = $finding->response_token;
+
+        $this->travel(8)->days();
+
+        $this->get(route('findings.respond', $token))->assertGone();
+        $this->post(route('findings.respond.plan', $token), [
+            'due_date' => today()->addDays(3)->toDateString(),
+            'pic_plan' => 'Ganti komponen dan periksa ulang.',
+        ])->assertGone();
+        $this->get(route('findings.respond.photo', [$token, 'problem']))->assertGone();
+    }
+
+    public function test_pic_response_routes_are_limited_to_twenty_requests_per_minute(): void
+    {
+        $reporter = User::factory()->create(['role' => 'inspector']);
+        $finding = $this->createFinding($reporter);
+        $url = route('findings.respond', $finding->response_token);
+
+        for ($request = 0; $request < 20; $request++) {
+            $this->get($url)->assertOk();
+        }
+
+        $this->get($url)->assertTooManyRequests();
     }
 
     public function test_pic_can_submit_plan_and_completion_and_reporter_can_verify(): void

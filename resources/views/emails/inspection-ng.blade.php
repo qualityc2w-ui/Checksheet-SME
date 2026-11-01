@@ -20,7 +20,12 @@ Bukti foto (tautan berlaku 24 jam):
     return collect($items)->map(fn (string $path, string|int $itemId) => basename($path).': '.\Illuminate\Support\Facades\URL::temporarySignedRoute(
         'inspections.shared-evidence',
         now()->addHours(24),
-        ['inspection' => $inspection->id, 'section' => $section, 'item' => $itemId]
+        [
+            'inspection' => $inspection->id,
+            'section' => $section,
+            'item' => $itemId,
+            'user_id' => $inspection->user_id,
+        ]
     ));
 }) as $link)
 {{ $link }}

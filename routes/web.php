@@ -15,12 +15,14 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [\App\Http\Controllers\AuthController::class, 'store'])->name('login.store');
 });
 
+Route::middleware('throttle:20,1')->group(function () {
     Route::get('/findings/respond/{token}', [FindingController::class, 'respond'])->name('findings.respond');
     Route::post('/findings/respond/{token}/plan', [FindingController::class, 'submitPlan'])->name('findings.respond.plan');
     Route::post('/findings/respond/{token}/completion', [FindingController::class, 'submitCompletion'])->name('findings.respond.completion');
     Route::get('/findings/respond/{token}/photos/{kind}', [FindingController::class, 'responsePhoto'])
         ->where('kind', 'problem|completion')
         ->name('findings.respond.photo');
+});
 
     Route::middleware('auth')->group(function () {
     Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'destroy'])->name('logout');

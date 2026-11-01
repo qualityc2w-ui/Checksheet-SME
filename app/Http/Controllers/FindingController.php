@@ -481,7 +481,13 @@ class FindingController extends Controller
         }
 
         try {
-            $this->deliverFindingEmail($finding);
+            DB::transaction(function () use ($finding): void {
+                $finding->update([
+                    'response_token' => Str::random(64),
+                    'response_token_expires_at' => now()->addDays(Finding::RESPONSE_TOKEN_TTL_DAYS),
+                ]);
+                $this->deliverFindingEmail($finding->fresh()->load('pic'));
+            });
         } catch (\Throwable $exception) {
             Log::error('Unable to send finding notification email.', [
                 'finding_id' => $finding->id,
@@ -776,7 +782,14 @@ class FindingController extends Controller
     {
         abort_unless(preg_match('/^[A-Za-z0-9]{64}$/', $token) === 1, 404);
 
-        return Finding::with('pic')->where('response_token', $token)->firstOrFail();
+        $finding = Finding::with('pic')->where('response_token', $token)->firstOrFail();
+        abort_unless(
+            $finding->response_token_expires_at?->isFuture(),
+            410,
+            'Tautan tindak lanjut sudah kedaluwarsa. Minta pengirim temuan mengirim ulang email PIC.'
+        );
+
+        return $finding;
     }
 
     private function deliverFindingEmail(Finding $finding): void

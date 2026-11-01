@@ -159,9 +159,25 @@ class InspectionWorkflowTest extends TestCase
         $sharedEvidenceUrl = URL::temporarySignedRoute(
             'inspections.shared-evidence',
             now()->addHour(),
-            ['inspection' => $inspection->id, 'section' => 'function', 'item' => $function->id]
+            [
+                'inspection' => $inspection->id,
+                'section' => 'function',
+                'item' => $function->id,
+                'user_id' => $inspection->user_id,
+            ]
         );
         $this->get($sharedEvidenceUrl)->assertOk();
+        $otherUserUrl = URL::temporarySignedRoute(
+            'inspections.shared-evidence',
+            now()->addHour(),
+            [
+                'inspection' => $inspection->id,
+                'section' => 'function',
+                'item' => $function->id,
+                'user_id' => User::factory()->create(['role' => 'inspector'])->id,
+            ]
+        );
+        $this->get($otherUserUrl)->assertNotFound();
         $this->assertDatabaseHas('inspections', ['id' => $inspection->id, 'area_id' => $area->id]);
         $this->actingAs(User::factory()->create(['role' => 'inspector']))
             ->post(route('inspections.approve', $inspection))

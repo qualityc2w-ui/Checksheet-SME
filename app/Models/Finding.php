@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Finding extends Model
 {
+    public const RESPONSE_TOKEN_TTL_DAYS = 7;
+
     public const STATUSES = ['open', 'scheduled', 'done', 'verified', 'rejected'];
 
     public const STATUS_LABELS = [
@@ -35,7 +37,7 @@ class Finding extends Model
         'code', 'title', 'part_name', 'part_type', 'found_date', 'shift', 'area_line',
         'problem_type', 'description', 'category', 'priority', 'analysis_man',
         'analysis_method', 'analysis_machine', 'analysis_material', 'root_cause',
-        'pic_id', 'status', 'response_token', 'due_date', 'pic_plan', 'responded_at',
+        'pic_id', 'status', 'response_token', 'response_token_expires_at', 'due_date', 'pic_plan', 'responded_at',
         'completion_note', 'problem_photo_path', 'completion_photo_path', 'completed_at',
         'verified_at', 'verification_note', 'email_sent_at', 'reporter_id', 'reporter_name',
         'inspection_id', 'inspection_section', 'inspection_item_index', 'point_check',
@@ -48,10 +50,18 @@ class Finding extends Model
             'found_date' => 'date',
             'due_date' => 'date',
             'responded_at' => 'datetime',
+            'response_token_expires_at' => 'datetime',
             'completed_at' => 'datetime',
             'verified_at' => 'datetime',
             'email_sent_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Finding $finding): void {
+            $finding->response_token_expires_at ??= now()->addDays(self::RESPONSE_TOKEN_TTL_DAYS);
+        });
     }
 
     public function pic(): BelongsTo

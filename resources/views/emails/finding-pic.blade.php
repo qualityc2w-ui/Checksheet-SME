@@ -17,3 +17,4 @@ Hasil: {{ $finding->observed_value }}{{ $finding->unit ? ' '.$finding->unit : ''
 
 Mohon isi rencana perbaikan dan tanggal target melalui tautan berikut:
 {{ $finding->responseUrl() }}
+Tautan berlaku sampai {{ $finding->response_token_expires_at->format('d/m/Y H:i') }}.

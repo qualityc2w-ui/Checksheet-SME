@@ -404,8 +404,12 @@ class InspectionController extends Controller
         return Storage::disk('local')->download($path);
     }
 
-    public function sharedEvidence(Inspection $inspection, string $section, string $item)
+    public function sharedEvidence(Request $request, Inspection $inspection, string $section, string $item)
     {
+        abort_unless(
+            (string) $request->query('user_id') === (string) $inspection->user_id,
+            404
+        );
         abort_unless(in_array($section, ['dimensions', 'visual', 'function'], true), 404);
         $path = $inspection->evidence[$section][$item] ?? null;
         abort_unless($path && Storage::disk('local')->exists($path), 404);
