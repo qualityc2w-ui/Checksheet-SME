@@ -12,6 +12,7 @@ use App\Models\Inspector;
 use App\Models\Product;
 use App\Models\VisualStandard;
 use App\Mail\InspectionNgReport;
+use App\Support\ImageMimeValidator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -128,6 +129,11 @@ class InspectionController extends Controller
         $visualValues = $request->input('visual_results', []);
         $functionValues = $request->input('function_results', []);
         $evidenceFiles = $request->file('evidence', []);
+        foreach ($evidenceFiles as $items) {
+            foreach ($items as $file) {
+                ImageMimeValidator::assertAllowed($file);
+            }
+        }
         $measurementMode = $validated['measurement_mode'] ?? 'manual';
 
         $this->requireSubmittedStandards($dimensions->modelKeys(), $dimensionValues, 'dimensions', true);

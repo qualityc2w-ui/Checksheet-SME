@@ -10,6 +10,7 @@ use App\Models\Inspector;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\VisualStandard;
+use App\Support\ImageMimeValidator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -93,6 +94,9 @@ class MasterDataController extends Controller
         $attributes = $this->validatedData($request, $section);
         $pointCheckImage = $attributes['point_check_image'] ?? null;
         unset($attributes['point_check_image']);
+        if ($pointCheckImage) {
+            ImageMimeValidator::assertAllowed($pointCheckImage);
+        }
 
         if ($section === 'products') {
             $attributes['area'] = Area::find($attributes['area_id'] ?? null)?->nama;
@@ -153,6 +157,9 @@ class MasterDataController extends Controller
         }
         $pointCheckImage = $attributes['point_check_image'] ?? null;
         unset($attributes['point_check_image']);
+        if ($pointCheckImage) {
+            ImageMimeValidator::assertAllowed($pointCheckImage);
+        }
         $oldImagePath = in_array($section, ['products', 'visual-standards'], true) ? $item->image_path : null;
 
         if (in_array($section, ['products', 'visual-standards'], true) && $pointCheckImage) {

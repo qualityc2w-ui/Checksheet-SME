@@ -7,6 +7,7 @@ use App\Models\Finding;
 use App\Models\FindingLookupOption;
 use App\Models\FindingPic;
 use App\Models\Inspection;
+use App\Support\ImageMimeValidator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -354,6 +355,9 @@ class FindingController extends Controller
         abort_unless(auth()->user()->canWriteInspections(), 403);
         $data = $this->validatedFinding($request);
         $photo = $request->file('problem_photo');
+        if ($photo) {
+            ImageMimeValidator::assertAllowed($photo);
+        }
         $path = null;
 
         try {
@@ -432,6 +436,9 @@ class FindingController extends Controller
         $this->authorizeAdmin();
         $data = $this->validatedFinding($request, $finding);
         $photo = $request->file('problem_photo');
+        if ($photo) {
+            ImageMimeValidator::assertAllowed($photo);
+        }
         $oldPath = $finding->problem_photo_path;
 
         if ($photo) {
@@ -562,6 +569,9 @@ class FindingController extends Controller
             'completion_note' => ['required', 'string', 'min:3', 'max:2000'],
             'completion_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ]);
+        if ($photo = $request->file('completion_photo')) {
+            ImageMimeValidator::assertAllowed($photo);
+        }
         $path = $request->file('completion_photo')?->store('findings/'.$finding->id, 'local');
         if ($request->hasFile('completion_photo') && $path === false) {
             throw new \RuntimeException('Foto penyelesaian gagal disimpan.');
