@@ -89,6 +89,18 @@ class InspectionWorkflowTest extends TestCase
         $this->assertDatabaseCount('products', 1);
     }
 
+    public function test_master_record_routes_reject_non_positive_or_non_numeric_ids(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+
+        foreach (['abc', '0', '-1'] as $record) {
+            $this->put(route('master.update', ['products', $record]), [])
+                ->assertNotFound();
+            $this->delete(route('master.destroy', ['products', $record]))
+                ->assertNotFound();
+        }
+    }
+
     public function test_user_can_sign_in(): void
     {
         $user = User::factory()->create(['password' => 'test-password-123']);

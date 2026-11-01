@@ -129,6 +129,7 @@ class MasterDataController extends Controller
     {
         $this->authorizeAdmin();
         $model = $this->modelFor($section);
+        abort_unless(ctype_digit($record) && (int) $record > 0, 404);
         $item = $model::findOrFail($record);
 
         if ($section === 'accounts') {
@@ -192,6 +193,7 @@ class MasterDataController extends Controller
     {
         $this->authorizeAdmin();
         $model = $this->modelFor($section);
+        abort_unless(ctype_digit($record) && (int) $record > 0, 404);
         $item = $model::findOrFail($record);
 
         if ($section === 'accounts') {
