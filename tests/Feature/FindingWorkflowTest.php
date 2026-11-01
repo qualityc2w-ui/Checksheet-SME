@@ -184,8 +184,10 @@ class FindingWorkflowTest extends TestCase
         $ownFinding = $this->createFinding($reporter, ['part_name' => 'Temuan Milik Saya']);
         $this->createFinding($otherReporter, ['part_name' => 'Temuan Milik Orang Lain']);
 
+        $this->actingAs(User::factory()->create(['role' => 'viewer']))->get(route('findings.dashboard'))
+            ->assertOk()->assertSee($ownFinding->part_name)->assertSee('Temuan Milik Orang Lain');
         $this->actingAs($reporter)->get(route('findings.dashboard'))
-            ->assertOk()->assertSee($ownFinding->part_name)->assertDontSee('Temuan Milik Orang Lain');
+            ->assertOk()->assertSee($ownFinding->part_name)->assertSee('Temuan Milik Orang Lain');
         $this->get(route('findings.index'))
             ->assertOk()->assertSee($ownFinding->part_name)->assertDontSee('Temuan Milik Orang Lain');
 

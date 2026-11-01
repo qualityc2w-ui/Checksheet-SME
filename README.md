@@ -40,6 +40,7 @@ Untuk menambah akun admin berikutnya, jalankan lagi `php artisan qc:create-admin
 - CRUD master produk, inspector, defect, dan standar dimensi, visual, serta fungsi per produk.
 - Penambahan standar dimensi, visual, dan fungsi difilter terlebih dahulu dengan line terdaftar dan tipe part; tabel standar juga menunjukkan tipe serta line part.
 - Modul Temuan QC 2W DPM yang dikelola Laravel: dashboard status/kategori/monitoring part/PIC, register dengan filter dan ekspor CSV, input dan edit temuan 4M, prioritas, bukti foto privat, serta riwayat tindak lanjut.
+- Dashboard Temuan QC bersifat global untuk semua pengguna yang sudah login, agar metrik status dan beban PIC mencakup seluruh temuan. Sebaliknya, register dan ekspor CSV hanya menampilkan temuan milik sendiri untuk pengguna non-admin; admin dapat melihat semua temuan.
 - Setiap hasil inspeksi NG langsung membuka formulir analisis 4M satu per satu untuk tiap point check yang gagal; tanggal/shift/produk/area/hasil ukur terisi otomatis dan foto wajib dari inspeksi dilampirkan ulang secara privat. Riwayat menampilkan jumlah tindak lanjut 4M yang masih perlu dibuat dan menyediakan aksi untuk melanjutkan.
 - PIC dapat membuka tautan token Laravel untuk mengirim rencana/tanggal target dan laporan penyelesaian; reporter atau admin dapat memverifikasi atau mengembalikan perbaikan. Admin mengelola PIC dan pilihan area/line, part, tipe, serta jenis masalah. Akun tetap memakai role Laravel yang sama.
 - Autentikasi sesi Laravel, pembatasan percobaan login, CSRF, dan pengelolaan akun melalui perintah Artisan.

@@ -30,7 +30,7 @@ class FindingController extends Controller
 
     public function dashboard(Request $request): View
     {
-        $findings = $this->filteredFindings($request)->with('pic')->get();
+        $findings = $this->filteredFindings($request, includeAllReporters: true)->with('pic')->get();
         $total = $findings->count();
         $statusCounts = collect(Finding::STATUSES)
             ->mapWithKeys(fn (string $status) => [$status => $findings->where('status', $status)->count()]);
@@ -682,12 +682,12 @@ class FindingController extends Controller
         return response()->file(Storage::disk('local')->path($path));
     }
 
-    private function filteredFindings(Request $request): Builder
+    private function filteredFindings(Request $request, bool $includeAllReporters = false): Builder
     {
         $user = auth()->user();
 
         return Finding::query()
-            ->when(!$user->isAdmin(), fn (Builder $query) => $query->where('reporter_id', $user->id))
+            ->when(!$includeAllReporters && !$user->isAdmin(), fn (Builder $query) => $query->where('reporter_id', $user->id))
             ->when($request->filled('q'), function (Builder $query) use ($request): void {
                 $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $request->string('q')->toString()).'%';
                 $query->where(function (Builder $subquery) use ($term): void {
