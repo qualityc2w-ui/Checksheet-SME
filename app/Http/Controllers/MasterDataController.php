@@ -230,7 +230,16 @@ class MasterDataController extends Controller
     {
         $filters = $request->validate([
             'area_id' => ['sometimes', 'required', 'string', 'max:30'],
-            'product_type' => ['sometimes', 'required', 'string', 'max:120'],
+            'product_type' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:120',
+                Rule::in(
+                    Product::query()->whereNotNull('tipe')->where('tipe', '!=', '')
+                        ->distinct()->pluck('tipe')->push('__none__')->all()
+                ),
+            ],
         ]);
         $product = Product::findOrFail($productId);
         $selectedAreaId = ($filters['area_id'] ?? null) === '__none__' ? null : ($filters['area_id'] ?? null);

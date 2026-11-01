@@ -565,6 +565,17 @@ class InspectionWorkflowTest extends TestCase
             'satuan' => 'mm',
         ]))->assertRedirect('/master/dimension-standards')
             ->assertSessionHasErrors('product_id');
+
+        $this->from('/master/dimension-standards')->post('/master/dimension-standards', array_merge($base, [
+            'product_type' => 'Tipe Tidak Terdaftar',
+            'parameter' => 'Tipe tidak valid',
+            'nilai_standar' => 10,
+            'toleransi_min' => 1,
+            'toleransi_max' => 1,
+            'satuan' => 'mm',
+        ]))->assertRedirect('/master/dimension-standards')
+            ->assertSessionHasErrors('product_type');
+        $this->assertDatabaseMissing('dimension_standards', ['parameter' => 'Tipe tidak valid']);
     }
 
     public function test_admin_can_create_building_folders_with_nested_lines(): void
