@@ -177,6 +177,31 @@ class FindingWorkflowTest extends TestCase
         $this->assertStringNotContainsString('Part Filter B', $csv);
     }
 
+    public function test_non_admin_finding_lists_only_show_the_reporters_own_findings(): void
+    {
+        $reporter = User::factory()->create(['role' => 'inspector']);
+        $otherReporter = User::factory()->create(['role' => 'inspector']);
+        $ownFinding = $this->createFinding($reporter, ['part_name' => 'Temuan Milik Saya']);
+        $this->createFinding($otherReporter, ['part_name' => 'Temuan Milik Orang Lain']);
+
+        $this->actingAs($reporter)->get(route('findings.dashboard'))
+            ->assertOk()->assertSee($ownFinding->part_name)->assertDontSee('Temuan Milik Orang Lain');
+        $this->get(route('findings.index'))
+            ->assertOk()->assertSee($ownFinding->part_name)->assertDontSee('Temuan Milik Orang Lain');
+
+        $export = $this->get(route('findings.export'))
+            ->assertOk()->assertDownload();
+        ob_start();
+        $export->sendContent();
+        $csv = ob_get_clean();
+        $this->assertStringContainsString($ownFinding->part_name, $csv);
+        $this->assertStringNotContainsString('Temuan Milik Orang Lain', $csv);
+
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->get(route('findings.index'))
+            ->assertOk()->assertSee($ownFinding->part_name)->assertSee('Temuan Milik Orang Lain');
+    }
+
     public function test_admin_can_edit_a_finding_but_inspector_cannot(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

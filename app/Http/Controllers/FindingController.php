@@ -684,7 +684,10 @@ class FindingController extends Controller
 
     private function filteredFindings(Request $request): Builder
     {
+        $user = auth()->user();
+
         return Finding::query()
+            ->when(!$user->isAdmin(), fn (Builder $query) => $query->where('reporter_id', $user->id))
             ->when($request->filled('q'), function (Builder $query) use ($request): void {
                 $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $request->string('q')->toString()).'%';
                 $query->where(function (Builder $subquery) use ($term): void {
