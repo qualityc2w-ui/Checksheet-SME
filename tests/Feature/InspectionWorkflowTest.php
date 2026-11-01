@@ -51,6 +51,25 @@ class InspectionWorkflowTest extends TestCase
         $this->get('/login')->assertOk()->assertSee('Masuk ke akun Anda');
     }
 
+    public function test_inspection_rejects_more_than_thirty_evidence_files(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+        $evidence = [];
+        for ($index = 0; $index < 31; $index++) {
+            $evidence['item-'.$index] = UploadedFile::fake()->createWithContent(
+                'evidence.png',
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jXioAAAAASUVORK5CYII=')
+            );
+        }
+
+        $this->post(route('inspections.store'), [
+            'evidence' => ['visual' => $evidence],
+        ])->assertSessionHasErrors([
+            'evidence' => 'Maksimal 30 foto bukti dapat diunggah dalam satu inspeksi.',
+        ]);
+        $this->assertDatabaseCount('inspections', 0);
+    }
+
     public function test_duplicate_product_code_has_a_clear_validation_message(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'admin']));

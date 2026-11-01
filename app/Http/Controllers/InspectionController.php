@@ -86,6 +86,14 @@ class InspectionController extends Controller
     public function store(Request $request): RedirectResponse
     {
         abort_unless(auth()->user()?->canWriteInspections(), 403);
+        $evidenceFiles = $request->file('evidence', []);
+        $evidenceCount = collect($evidenceFiles)->flatten(1)->filter()->count();
+        if ($evidenceCount > 30) {
+            throw ValidationException::withMessages([
+                'evidence' => 'Maksimal 30 foto bukti dapat diunggah dalam satu inspeksi.',
+            ]);
+        }
+
         $validated = $request->validate([
             'building_id' => ['required', 'integer', Rule::exists('areas', 'id')->whereNull('parent_id')],
             'tanggal' => ['required', 'date'],
@@ -128,7 +136,6 @@ class InspectionController extends Controller
         $dimensionValues = $request->input('dimensions', []);
         $visualValues = $request->input('visual_results', []);
         $functionValues = $request->input('function_results', []);
-        $evidenceFiles = $request->file('evidence', []);
         foreach ($evidenceFiles as $items) {
             foreach ($items as $file) {
                 ImageMimeValidator::assertAllowed($file);
