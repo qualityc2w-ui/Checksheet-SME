@@ -158,6 +158,33 @@ class FindingWorkflowTest extends TestCase
         $this->assertDatabaseHas('findings', ['id' => $finding->id, 'part_name' => 'Cover Cylinder Head']);
     }
 
+    public function test_only_admin_or_finding_reporter_can_verify_a_completed_finding(): void
+    {
+        $reporter = User::factory()->create(['role' => 'inspector']);
+        $finding = $this->createFinding($reporter, ['status' => 'done']);
+        $verification = [
+            'decision' => 'verified',
+            'verification_note' => 'Perbaikan sudah sesuai.',
+        ];
+
+        $this->actingAs(User::factory()->create(['role' => 'inspector']))
+            ->post(route('findings.verify', $finding), $verification)
+            ->assertForbidden();
+        $this->assertDatabaseHas('findings', ['id' => $finding->id, 'status' => 'done']);
+
+        $this->actingAs($reporter)
+            ->post(route('findings.verify', $finding), $verification)
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('findings', ['id' => $finding->id, 'status' => 'verified']);
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $adminFinding = $this->createFinding($reporter, ['status' => 'done']);
+        $this->actingAs($admin)
+            ->post(route('findings.verify', $adminFinding), $verification)
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('findings', ['id' => $adminFinding->id, 'status' => 'verified']);
+    }
+
     private function validFindingInput(FindingPic $pic): array
     {
         return [

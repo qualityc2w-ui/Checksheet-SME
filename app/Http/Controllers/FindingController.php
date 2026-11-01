@@ -413,6 +413,7 @@ class FindingController extends Controller
         $this->authorizeAdmin();
         $inspection = $finding->inspection;
         if ($inspection) {
+            $this->authorizeInspectionAccess($inspection);
             $inspectionAttributes = $this->inspectionFindingAttributes($inspection);
             $finding->forceFill($inspectionAttributes);
         }
@@ -496,7 +497,11 @@ class FindingController extends Controller
 
     public function verify(Request $request, Finding $finding): RedirectResponse
     {
-        abort_unless(auth()->user()->isAdmin() || $finding->reporter_id === auth()->id(), 403);
+        abort_unless(
+            auth()->user()->isAdmin()
+                || ((int) $finding->reporter_id === (int) auth()->id() && $finding->reporter_id !== null),
+            403
+        );
         $data = $request->validate([
             'decision' => ['required', Rule::in(['verified', 'rejected'])],
             'verification_note' => ['required', 'string', 'min:3', 'max:2000'],
