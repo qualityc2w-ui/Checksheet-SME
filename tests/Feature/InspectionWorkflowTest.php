@@ -102,6 +102,16 @@ class InspectionWorkflowTest extends TestCase
         }
     }
 
+    public function test_master_edit_query_rejects_non_positive_or_non_numeric_ids(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+
+        foreach (['abc', '0', '-1', '1.2'] as $editId) {
+            $this->get('/master/products?edit='.$editId)
+                ->assertNotFound();
+        }
+    }
+
     public function test_user_can_sign_in(): void
     {
         $user = User::factory()->create(['password' => 'test-password-123']);

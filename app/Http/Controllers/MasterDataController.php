@@ -51,7 +51,12 @@ class MasterDataController extends Controller
         $records = $section === 'accounts'
             ? $query->orderBy('name')->get()
             : $query->latest()->get();
-        $editing = $request->filled('edit') ? $model::findOrFail($request->input('edit')) : null;
+        $editId = $request->input('edit');
+        abort_unless(
+            $editId === null || $editId === '' || (is_string($editId) && ctype_digit($editId) && (int) $editId > 0),
+            404
+        );
+        $editing = $editId !== null && $editId !== '' ? $model::findOrFail($editId) : null;
 
         return view('master.index', [
             'section' => $section,
