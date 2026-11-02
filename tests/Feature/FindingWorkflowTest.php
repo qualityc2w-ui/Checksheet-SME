@@ -220,6 +220,36 @@ class FindingWorkflowTest extends TestCase
         $this->assertDatabaseHas('findings', ['id' => $finding->id, 'part_name' => 'Cover Cylinder Head']);
     }
 
+    public function test_only_admin_or_reporter_can_view_a_finding_and_its_photos(): void
+    {
+        Storage::fake('local');
+        $reporter = User::factory()->create(['role' => 'inspector']);
+        $finding = $this->createFinding($reporter);
+        $finding->update(['problem_photo_path' => 'findings/'.$finding->id.'/problem.png']);
+        Storage::disk('local')->put($finding->problem_photo_path, 'image');
+        $otherUser = User::factory()->create(['role' => 'inspector']);
+
+        $this->actingAs($otherUser)
+            ->get(route('findings.show', $finding))
+            ->assertForbidden();
+        $this->get(route('findings.photo', [$finding, 'problem']))
+            ->assertForbidden();
+        $this->post(route('findings.email', $finding))
+            ->assertForbidden();
+
+        $this->actingAs($reporter)
+            ->get(route('findings.show', $finding))
+            ->assertOk();
+        $this->get(route('findings.photo', [$finding, 'problem']))
+            ->assertOk();
+
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->get(route('findings.show', $finding))
+            ->assertOk();
+        $this->get(route('findings.photo', [$finding, 'problem']))
+            ->assertOk();
+    }
+
     public function test_only_admin_or_finding_reporter_can_verify_a_completed_finding(): void
     {
         $reporter = User::factory()->create(['role' => 'inspector']);

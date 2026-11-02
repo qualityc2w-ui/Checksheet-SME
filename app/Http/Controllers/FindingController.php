@@ -408,6 +408,7 @@ class FindingController extends Controller
 
     public function show(Finding $finding): View
     {
+        $this->authorizeFindingAccess($finding);
         $finding->load('pic');
 
         return view('findings.show', ['finding' => $finding]);
@@ -483,6 +484,7 @@ class FindingController extends Controller
     public function sendEmail(Finding $finding): RedirectResponse
     {
         abort_unless(auth()->user()->canWriteInspections(), 403);
+        $this->authorizeFindingAccess($finding);
         $finding->load('pic');
         if (! filter_var($finding->pic?->email, FILTER_VALIDATE_EMAIL)) {
             return back()->withErrors(['email' => 'Alamat email PIC belum tersedia atau tidak valid.']);
@@ -666,6 +668,7 @@ class FindingController extends Controller
 
     public function photo(Finding $finding, string $kind)
     {
+        $this->authorizeFindingAccess($finding);
         abort_unless(in_array($kind, ['problem', 'completion'], true), 404);
         $path = $kind === 'problem' ? $finding->problem_photo_path : $finding->completion_photo_path;
         abort_unless($path && Storage::disk('local')->exists($path), 404);
@@ -827,6 +830,11 @@ class FindingController extends Controller
     private function authorizeAdmin(): void
     {
         abort_unless(auth()->user()->isAdmin(), 403);
+    }
+
+    private function authorizeFindingAccess(Finding $finding): void
+    {
+        abort_unless(auth()->user()->isAdmin() || $finding->reporter_id === auth()->id(), 403);
     }
 
     private function authorizeInspectionAccess(Inspection $inspection): void
