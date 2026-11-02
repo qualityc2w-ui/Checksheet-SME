@@ -1,4 +1,4 @@
-LAPORAN TEMUAN QC — Inspeksi #{{ $inspection->id }}
+LAPORAN TEMUAN QC — Inspeksi
 
 Produk: {{ $inspection->product?->kode ?? '-' }} - {{ $inspection->product?->nama ?? 'Produk dihapus' }}
 Area/Line: {{ $inspection->area?->parent ? $inspection->area->parent->nama.' / '.$inspection->area->nama : ($inspection->area?->nama ?? '-') }}
@@ -20,12 +20,12 @@ Bukti foto (tautan berlaku 24 jam):
     return collect($items)->map(fn (string $path, string|int $itemId) => basename($path).': '.\Illuminate\Support\Facades\URL::temporarySignedRoute(
         'inspections.shared-evidence',
         now()->addHours(24),
-        [
-            'inspection' => $inspection->id,
+        ['payload' => \Illuminate\Support\Facades\Crypt::encrypt([
+            'inspection_id' => (string) $inspection->id,
             'section' => $section,
-            'item' => $itemId,
-            'user_id' => $inspection->user_id,
-        ]
+            'item' => (string) $itemId,
+            'user_id' => (string) $inspection->user_id,
+        ])]
     ));
 }) as $link)
 {{ $link }}

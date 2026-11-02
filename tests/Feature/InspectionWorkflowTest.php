@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\VisualStandard;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
@@ -185,10 +186,24 @@ class InspectionWorkflowTest extends TestCase
         $this->assertCount(1, $inspection->evidence['function']);
         Storage::disk('local')->assertExists($inspection->evidence['function'][$function->id]);
         $this->get(route('inspections.evidence', [$inspection, 0]))->assertOk();
-        Mail::assertSent(\App\Mail\InspectionNgReport::class, fn ($mail) => $mail->hasTo('petugas@example.com'));
+        Mail::assertSent(\App\Mail\InspectionNgReport::class, fn ($mail) => $mail->hasTo('petugas@example.com')
+            && ! str_contains($mail->render(), 'Inspeksi #'.$inspection->id)
+            && ! str_contains($mail->render(), 'inspection=')
+            && ! str_contains($mail->render(), 'user_id='));
         $this->assertNotNull($inspection->fresh()->email_sent_at);
         $sharedEvidenceUrl = URL::temporarySignedRoute(
             'inspections.shared-evidence',
+            now()->addHour(),
+            ['payload' => Crypt::encrypt([
+                'inspection_id' => (string) $inspection->id,
+                'section' => 'function',
+                'item' => (string) $function->id,
+                'user_id' => (string) $inspection->user_id,
+            ])]
+        );
+        $this->get($sharedEvidenceUrl)->assertOk();
+        $legacySharedEvidenceUrl = URL::temporarySignedRoute(
+            'inspections.shared-evidence.legacy',
             now()->addHour(),
             [
                 'inspection' => $inspection->id,
@@ -197,16 +212,16 @@ class InspectionWorkflowTest extends TestCase
                 'user_id' => $inspection->user_id,
             ]
         );
-        $this->get($sharedEvidenceUrl)->assertOk();
+        $this->get($legacySharedEvidenceUrl)->assertOk();
         $otherUserUrl = URL::temporarySignedRoute(
             'inspections.shared-evidence',
             now()->addHour(),
-            [
-                'inspection' => $inspection->id,
+            ['payload' => Crypt::encrypt([
+                'inspection_id' => (string) $inspection->id,
                 'section' => 'function',
-                'item' => $function->id,
-                'user_id' => User::factory()->create(['role' => 'inspector'])->id,
-            ]
+                'item' => (string) $function->id,
+                'user_id' => (string) User::factory()->create(['role' => 'inspector'])->id,
+            ])]
         );
         $this->get($otherUserUrl)->assertNotFound();
         $this->assertDatabaseHas('inspections', ['id' => $inspection->id, 'area_id' => $area->id]);

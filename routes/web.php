@@ -6,9 +6,12 @@ use App\Http\Controllers\InspectionController;
 use App\Http\Controllers\MasterDataController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/qc/evidence/{inspection}/{section}/{item}', [InspectionController::class, 'sharedEvidence'])
+Route::get('/qc/evidence', [InspectionController::class, 'sharedEvidence'])
     ->middleware('signed')
     ->name('inspections.shared-evidence');
+Route::get('/qc/evidence/{inspection}/{section}/{item}', [InspectionController::class, 'legacySharedEvidence'])
+    ->middleware('signed')
+    ->name('inspections.shared-evidence.legacy');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [\App\Http\Controllers\AuthController::class, 'create'])->name('login');

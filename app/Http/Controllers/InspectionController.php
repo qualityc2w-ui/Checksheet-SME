@@ -15,10 +15,12 @@ use App\Mail\InspectionNgReport;
 use App\Support\ImageMimeValidator;
 use App\Support\LocalStoragePath;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -418,12 +420,42 @@ class InspectionController extends Controller
         return response()->download(LocalStoragePath::resolve($path));
     }
 
-    public function sharedEvidence(Request $request, Inspection $inspection, string $section, string $item)
+    public function sharedEvidence(Request $request)
     {
+        $payload = $request->query('payload');
+        abort_unless(is_string($payload), 404);
+        try {
+            $data = Crypt::decrypt($payload);
+        } catch (DecryptException) {
+            abort(404);
+        }
+
         abort_unless(
-            (string) $request->query('user_id') === (string) $inspection->user_id,
+            is_array($data)
+                && isset($data['inspection_id'], $data['section'], $data['item'], $data['user_id'])
+                && (is_int($data['inspection_id']) || (is_string($data['inspection_id']) && ctype_digit($data['inspection_id'])))
+                && (int) $data['inspection_id'] > 0
+                && is_string($data['section'])
+                && in_array($data['section'], ['dimensions', 'visual', 'function'], true)
+                && (is_string($data['item']) || is_int($data['item']))
+                && (is_string($data['user_id']) || is_int($data['user_id'])),
             404
         );
+        $inspection = Inspection::findOrFail((int) $data['inspection_id']);
+        abort_unless((string) $data['user_id'] === (string) $inspection->user_id, 404);
+
+        return $this->serveSharedEvidence($inspection, $data['section'], (string) $data['item']);
+    }
+
+    public function legacySharedEvidence(Request $request, Inspection $inspection, string $section, string $item)
+    {
+        abort_unless((string) $request->query('user_id') === (string) $inspection->user_id, 404);
+
+        return $this->serveSharedEvidence($inspection, $section, $item);
+    }
+
+    private function serveSharedEvidence(Inspection $inspection, string $section, string $item)
+    {
         abort_unless(in_array($section, ['dimensions', 'visual', 'function'], true), 404);
         $path = $inspection->evidence[$section][$item] ?? null;
         abort_unless($path && Storage::disk('local')->exists($path), 404);
