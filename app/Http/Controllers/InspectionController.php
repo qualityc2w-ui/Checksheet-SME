@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\VisualStandard;
 use App\Mail\InspectionNgReport;
 use App\Support\ImageMimeValidator;
+use App\Support\LocalStoragePath;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +26,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 class InspectionController extends Controller
@@ -352,7 +353,7 @@ class InspectionController extends Controller
 
     private function privateImageResponse(string $path)
     {
-        return response()->file(Storage::disk('local')->path($path), [
+        return response()->file(LocalStoragePath::resolve($path), [
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);
@@ -407,14 +408,14 @@ class InspectionController extends Controller
         return back()->with('success', 'Data inspeksi berhasil dihapus.');
     }
 
-    public function evidence(Inspection $inspection, int $index): StreamedResponse
+    public function evidence(Inspection $inspection, int $index): BinaryFileResponse
     {
         $this->authorizeInspectionAccess($inspection);
         $path = collect($inspection->evidence ?? [])->flatten()->values()->get($index);
 
         abort_unless($path && Storage::disk('local')->exists($path), 404);
 
-        return Storage::disk('local')->download($path);
+        return response()->download(LocalStoragePath::resolve($path));
     }
 
     public function sharedEvidence(Request $request, Inspection $inspection, string $section, string $item)
@@ -427,7 +428,7 @@ class InspectionController extends Controller
         $path = $inspection->evidence[$section][$item] ?? null;
         abort_unless($path && Storage::disk('local')->exists($path), 404);
 
-        return response()->file(Storage::disk('local')->path($path), [
+        return response()->file(LocalStoragePath::resolve($path), [
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);

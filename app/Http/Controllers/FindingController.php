@@ -8,6 +8,7 @@ use App\Models\FindingLookupOption;
 use App\Models\FindingPic;
 use App\Models\Inspection;
 use App\Support\ImageMimeValidator;
+use App\Support\LocalStoragePath;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -314,7 +315,7 @@ class FindingController extends Controller
         $point = $this->inspectionPoint($inspection, $section, $item);
         abort_unless($point['evidence_path'] && Storage::disk('local')->exists($point['evidence_path']), 404);
 
-        return response()->file(Storage::disk('local')->path($point['evidence_path']), [
+        return response()->file(LocalStoragePath::resolve($point['evidence_path']), [
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);
@@ -669,7 +670,7 @@ class FindingController extends Controller
         $path = $kind === 'problem' ? $finding->problem_photo_path : $finding->completion_photo_path;
         abort_unless($path && Storage::disk('local')->exists($path), 404);
 
-        return response()->file(Storage::disk('local')->path($path));
+        return response()->file(LocalStoragePath::resolve($path));
     }
 
     public function responsePhoto(string $token, string $kind)
@@ -679,7 +680,7 @@ class FindingController extends Controller
         $path = $kind === 'problem' ? $finding->problem_photo_path : $finding->completion_photo_path;
         abort_unless($path && Storage::disk('local')->exists($path), 404);
 
-        return response()->file(Storage::disk('local')->path($path));
+        return response()->file(LocalStoragePath::resolve($path));
     }
 
     private function filteredFindings(Request $request, bool $includeAllReporters = false): Builder
