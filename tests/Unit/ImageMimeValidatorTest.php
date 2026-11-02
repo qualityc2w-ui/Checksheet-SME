@@ -31,4 +31,19 @@ class ImageMimeValidatorTest extends TestCase
             $this->assertSame(422, $exception->getStatusCode());
         }
     }
+
+    public function test_it_rejects_unsupported_extensions_even_when_contents_are_a_supported_image(): void
+    {
+        $file = UploadedFile::fake()->createWithContent(
+            'image.gif',
+            base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jXioAAAAASUVORK5CYII=')
+        );
+
+        try {
+            ImageMimeValidator::assertAllowed($file);
+            $this->fail('Expected unsupported extension to be rejected.');
+        } catch (HttpException $exception) {
+            $this->assertSame(422, $exception->getStatusCode());
+        }
+    }
 }
