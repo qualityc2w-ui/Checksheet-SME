@@ -436,6 +436,11 @@ class FindingController extends Controller
     public function update(Request $request, Finding $finding): RedirectResponse
     {
         $this->authorizeAdmin();
+        $inspection = $finding->inspection;
+        if ($inspection) {
+            $this->authorizeInspectionAccess($inspection);
+        }
+
         $data = $this->validatedFinding($request, $finding);
         $photo = $request->file('problem_photo');
         if ($photo) {
