@@ -281,7 +281,7 @@ class FindingController extends Controller
                 return $finding;
             });
         } catch (\Throwable $exception) {
-            if ($copiedEvidence && ! Storage::disk('local')->delete($copiedEvidence)) {
+            if ($copiedEvidence && ! $this->safeDeleteStoragePath($copiedEvidence)) {
                 report(new \RuntimeException('Foto bukti inspeksi tidak dapat dibersihkan setelah penyimpanan 4M gagal.'));
             }
             throw $exception;
@@ -384,7 +384,7 @@ class FindingController extends Controller
                 return $finding;
             });
         } catch (\Throwable $exception) {
-            if ($path && ! Storage::disk('local')->delete($path)) {
+            if ($path && ! $this->safeDeleteStoragePath($path)) {
                 report(new \RuntimeException('Gagal membersihkan foto temuan setelah penyimpanan dibatalkan.'));
             }
             throw $exception;
@@ -460,12 +460,12 @@ class FindingController extends Controller
         try {
             $finding->update($data);
         } catch (\Throwable $exception) {
-            if (isset($path) && ! Storage::disk('local')->delete($path)) {
+            if (isset($path) && ! $this->safeDeleteStoragePath($path)) {
                 report(new \RuntimeException('Gagal membersihkan foto temuan setelah perubahan dibatalkan.'));
             }
             throw $exception;
         }
-        if (isset($path) && $oldPath && ! Storage::disk('local')->delete($oldPath)) {
+        if (isset($path) && $oldPath && ! $this->safeDeleteStoragePath($oldPath)) {
             report(new \RuntimeException('Foto bukti lama tidak dapat dihapus.'));
         }
 
@@ -478,7 +478,7 @@ class FindingController extends Controller
         $paths = array_filter([$finding->problem_photo_path, $finding->completion_photo_path]);
         $finding->delete();
         foreach ($paths as $path) {
-            if (! Storage::disk('local')->delete($path)) {
+            if (! $this->safeDeleteStoragePath($path)) {
                 report(new \RuntimeException('Berkas foto temuan tidak dapat dihapus.'));
             }
         }
@@ -562,7 +562,7 @@ class FindingController extends Controller
             'completed_at' => null,
             'verified_at' => null,
         ]);
-        if ($oldCompletionPhoto && ! Storage::disk('local')->delete($oldCompletionPhoto)) {
+        if ($oldCompletionPhoto && ! $this->safeDeleteStoragePath($oldCompletionPhoto)) {
             report(new \RuntimeException('Foto penyelesaian lama tidak dapat dihapus.'));
         }
 
@@ -593,12 +593,12 @@ class FindingController extends Controller
                 'completed_at' => now(),
             ]);
         } catch (\Throwable $exception) {
-            if ($path && ! Storage::disk('local')->delete($path)) {
+            if ($path && ! $this->safeDeleteStoragePath($path)) {
                 report(new \RuntimeException('Foto penyelesaian tidak dapat dibersihkan setelah penyimpanan gagal.'));
             }
             throw $exception;
         }
-        if ($oldPath && $oldPath !== $path && ! Storage::disk('local')->delete($oldPath)) {
+        if ($oldPath && $oldPath !== $path && ! $this->safeDeleteStoragePath($oldPath)) {
             report(new \RuntimeException('Foto penyelesaian lama tidak dapat dihapus.'));
         }
 
@@ -848,5 +848,21 @@ class FindingController extends Controller
             auth()->user()->isAdmin() || (int) $inspection->user_id === (int) auth()->id(),
             404
         );
+    }
+
+    private function safeDeleteStoragePath(?string $path): bool
+    {
+        if (! $path) {
+            return true;
+        }
+        try {
+            LocalStoragePath::resolve($path);
+        } catch (\Throwable) {
+            Log::warning('Blocked attempt to delete path outside storage root.', ['path' => $path]);
+
+            return false;
+        }
+
+        return Storage::disk('local')->delete($path);
     }
 }

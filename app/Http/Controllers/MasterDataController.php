@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Models\VisualStandard;
 use App\Support\ImageMimeValidator;
+use App\Support\LocalStoragePath;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -121,7 +122,7 @@ class MasterDataController extends Controller
         try {
             $model::create($attributes);
         } catch (\Throwable $exception) {
-            if (isset($path) && ! Storage::disk('local')->delete($path)) {
+            if (isset($path) && ! $this->safeDeleteStoragePath($path)) {
                 Log::error('Unable to clean up point-check image after a failed save.', ['path' => $path]);
             }
             throw $exception;
@@ -179,12 +180,12 @@ class MasterDataController extends Controller
         try {
             $item->update($attributes);
         } catch (\Throwable $exception) {
-            if (isset($path) && ! Storage::disk('local')->delete($path)) {
+            if (isset($path) && ! $this->safeDeleteStoragePath($path)) {
                 Log::error('Unable to clean up point-check image after a failed update.', ['path' => $path]);
             }
             throw $exception;
         }
-        if (isset($path) && $oldImagePath && ! Storage::disk('local')->delete($oldImagePath)) {
+        if (isset($path) && $oldImagePath && ! $this->safeDeleteStoragePath($oldImagePath)) {
             Log::warning('Old point-check image could not be removed.', ['path' => $oldImagePath]);
         }
         if ($section === 'products') {
@@ -211,7 +212,7 @@ class MasterDataController extends Controller
 
         $imagePath = in_array($section, ['products', 'visual-standards'], true) ? $item->image_path : null;
         $item->delete();
-        if ($imagePath && ! Storage::disk('local')->delete($imagePath)) {
+        if ($imagePath && ! $this->safeDeleteStoragePath($imagePath)) {
             return redirect()->route('master.index', $section)
                 ->with('warning', 'Data berhasil dihapus, tetapi gambar point-check gagal dibersihkan dari penyimpanan.');
         }
@@ -339,5 +340,21 @@ class MasterDataController extends Controller
             'point_check_image.mimes' => 'Format gambar point check harus JPG, PNG, atau WebP.',
             'point_check_image.max' => 'Ukuran gambar point check maksimal 25 MB.',
         ];
+    }
+
+    private function safeDeleteStoragePath(?string $path): bool
+    {
+        if (! $path) {
+            return true;
+        }
+        try {
+            LocalStoragePath::resolve($path);
+        } catch (\Throwable) {
+            Log::warning('Blocked attempt to delete path outside storage root.', ['path' => $path]);
+
+            return false;
+        }
+
+        return Storage::disk('local')->delete($path);
     }
 }

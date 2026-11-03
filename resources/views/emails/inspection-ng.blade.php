@@ -17,16 +17,21 @@ Temuan:
 
 Bukti foto (tautan berlaku 24 jam):
 @forelse (collect($inspection->evidence ?? [])->filter(fn ($items) => is_array($items))->flatMap(function (array $items, string $section) use ($inspection) {
-    return collect($items)->map(fn (string $path, string|int $itemId) => basename($path).': '.\Illuminate\Support\Facades\URL::temporarySignedRoute(
-        'inspections.shared-evidence',
-        now()->addHours(24),
-        ['payload' => \Illuminate\Support\Facades\Crypt::encrypt([
-            'inspection_id' => (string) $inspection->id,
-            'section' => $section,
-            'item' => (string) $itemId,
-            'user_id' => (string) $inspection->user_id,
-        ])]
-    ));
+    $counter = 0;
+    return collect($items)->map(function (string $path, string|int $itemId) use ($inspection, $section, &$counter) {
+        $counter++;
+        $label = 'Bukti foto '.$counter;
+        return $label.': '.\Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'inspections.shared-evidence',
+            now()->addHours(24),
+            ['payload' => \Illuminate\Support\Facades\Crypt::encrypt([
+                'inspection_id' => (string) $inspection->id,
+                'section' => $section,
+                'item' => (string) $itemId,
+                'user_id' => (string) $inspection->user_id,
+            ])]
+        );
+    });
 }) as $link)
 {{ $link }}
 @empty

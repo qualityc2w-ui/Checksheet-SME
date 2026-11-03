@@ -10,7 +10,7 @@ Route::get('/qc/evidence', [InspectionController::class, 'sharedEvidence'])
     ->middleware('signed')
     ->name('inspections.shared-evidence');
 Route::get('/qc/evidence/{inspection}/{section}/{item}', [InspectionController::class, 'legacySharedEvidence'])
-    ->middleware('signed')
+    ->middleware(['auth', 'signed'])
     ->name('inspections.shared-evidence.legacy');
 
 Route::middleware('guest')->group(function () {
